@@ -16,7 +16,7 @@ bash install.sh
 .\install.ps1
 ```
 
-After installation, every subagent Claude Code dispatches will inherit your full conversation context by default. Verify with `/skills` (the `prefer-fork-agents` skill should be listed) and `/fork` (the slash command should be available).
+After installation, new slash command `/fork` is available and `prefer-fork-agents` listed under `/skills`. Now every new agent will startet with full session context by default. 
 
 ---
 
