@@ -5,7 +5,12 @@
 ```bash
 git clone https://github.com/Kirchlive/Enable-Claude-Fork-Agent.git
 cd Enable-Claude-Fork-Agent
+
+# macOS / Linux / WSL / Git Bash
 bash install.sh
+
+# Windows (PowerShell 7+)
+.\install.ps1
 ```
 
 After installation, every subagent Claude Code dispatches will inherit your full conversation context by default. Verify with `/skills` (the `prefer-fork-agents` skill should be listed) and `/fork` (the slash command should be available).
@@ -65,11 +70,11 @@ Many community projects converged on layered methodological solutions before —
 
 ## What this repo does
 
-Three things, automated by a single `install.sh`:
+Three things, automated by the installer for your platform:
 
 1. **Sets `CLAUDE_CODE_FORK_SUBAGENT=1`** in your `~/.claude/settings.json` (merged safely into existing `env` block, or created if absent). This activates the fork mechanism.
 2. **Installs the `prefer-fork-agents` skill** to `~/.claude/skills/prefer-fork-agents/`. The skill auto-loads on relevant triggers and biases Claude toward fork dispatch by default, with explicit exceptions for the cases where named subagents remain correct.
-3. **Backs up your existing `settings.json`** before any modification — rollback is one `cp` away.
+3. **Backs up your existing `settings.json`** before any modification — rollback is one `cp` (or `Copy-Item`) away.
 
 The skill itself encodes a default-deny policy: fork unless one of four documented exceptions applies (unbiased verdict, lightweight read-only search, plan-only mode, specialized custom subagent). It also covers parallelization criteria, worktree isolation for edit fan-outs, and post-dispatch verification.
 
@@ -77,13 +82,15 @@ The skill itself encodes a default-deny policy: fork unless one of four document
 
 ## Installation
 
-### Automated
+Two native installers, same outcome — pick the one for your platform.
+
+### macOS / Linux / WSL / Git Bash
 
 ```bash
 bash install.sh
 ```
 
-The script will:
+Requires `python3` (for safe JSON merging). The script will:
 
 - Verify Claude Code version (≥ v2.1.117 required)
 - Back up `~/.claude/settings.json` to a timestamped backup
@@ -91,11 +98,24 @@ The script will:
 - Copy the skill folder to `~/.claude/skills/prefer-fork-agents/`
 - Print verification steps
 
-If `~/.claude/settings.json` doesn't exist, it will be created with minimal content.
+### Windows (PowerShell 7+)
+
+```powershell
+.\install.ps1
+```
+
+If you get an execution-policy error, run once: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` and re-run.
+
+Requires PowerShell 7 or later (`pwsh`). Install via:
+- Windows: `winget install --id Microsoft.Powershell`
+- macOS: `brew install --cask powershell`
+- Linux: see [Microsoft's install guide](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)
+
+The PowerShell installer uses native JSON handling (no Python dependency) and produces the same result as the bash version: backup, merged settings, installed skill.
 
 ### Manual installation (3 steps)
 
-If you prefer not to run the script:
+If you prefer not to run either script, do it by hand.
 
 **1.** Edit `~/.claude/settings.json` — add or extend the `env` block:
 
@@ -109,11 +129,20 @@ If you prefer not to run the script:
 
 If you already have keys in `env`, add `CLAUDE_CODE_FORK_SUBAGENT` alongside them. **Do not create a second top-level `env` key** — JSON silently overwrites duplicates and you'll lose the setting.
 
-**2.** Copy the skill:
+**2.** Copy the skill.
+
+macOS / Linux / WSL / Git Bash:
 
 ```bash
 mkdir -p ~/.claude/skills/prefer-fork-agents
 cp skills/prefer-fork-agents/SKILL.md ~/.claude/skills/prefer-fork-agents/
+```
+
+Windows (PowerShell):
+
+```powershell
+New-Item -ItemType Directory -Path "$HOME\.claude\skills\prefer-fork-agents" -Force
+Copy-Item "skills\prefer-fork-agents\SKILL.md" "$HOME\.claude\skills\prefer-fork-agents\"
 ```
 
 **3.** Restart Claude Code (close and reopen — settings are read at process startup).
@@ -192,12 +221,21 @@ The skill is a soft policy — it teaches Claude to prefer fork. For environment
 
 ## Uninstall
 
+macOS / Linux / WSL / Git Bash:
+
 ```bash
-# Restore the original settings.json
+# Restore the original settings.json (use your actual backup filename — the installer prints it)
 cp ~/.claude/settings.json.pre-fork-backup-<TIMESTAMP> ~/.claude/settings.json
 
 # Remove the skill
 rm -rf ~/.claude/skills/prefer-fork-agents
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item "$HOME\.claude\settings.json.pre-fork-backup-<TIMESTAMP>" "$HOME\.claude\settings.json"
+Remove-Item -Recurse -Force "$HOME\.claude\skills\prefer-fork-agents"
 ```
 
 Restart Claude Code. Behavior reverts to default named-subagent dispatch.
