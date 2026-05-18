@@ -1,8 +1,8 @@
-# Enable-Claude-Fork-Agent
+# <u>Enable-[Claude](https://github.com/Kirchlive/Enable-Claude-Fork-Agent)-Fork-Agent</u>
 
-All in one setup switches Claude Code's default subagent dispatch with fresh and distracting context to **fork-agent mode with full session context** and teaches Claude to use correct through SKILL.md
+Full setup switches Claude Code's default subagent dispatch with flawed improvisation behavior due to a lack of context - to **fork agent mode with full session context** and Claude skill set for correct use and operation.
 
-![](https://i.imgur.com/lAlbdZv.png)
+<img src="https://i.imgur.com/lAlbdZv.png" alt="IMG" width="750">
 
 ```
 git clone https://github.com/Kirchlive/Enable-Claude-Fork-Agent.git
