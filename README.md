@@ -1,8 +1,8 @@
 # Enable-Claude-Fork-Agent
 
-> All in one setup switches Claude Code's default subagent dispatch with fresh and distracting context to **fork-agent mode with full session context** and teaches Claude to use correct through SKILL.md
+All in one setup switches Claude Code's default subagent dispatch with fresh and distracting context to **fork-agent mode with full session context** and teaches Claude to use correct through SKILL.md
 
-![](https://i.imgur.com/lAlbdZv.png)
+[](https://i.imgur.com/lAlbdZv.png)
 
 ```
 git clone https://github.com/Kirchlive/Enable-Claude-Fork-Agent.git
