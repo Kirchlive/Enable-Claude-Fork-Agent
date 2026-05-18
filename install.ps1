@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 # Enable-Claude-Fork-Agent installer (PowerShell)
-# Sets CLAUDE_CODE_FORK_SUBAGENT=1 in ~/.claude/settings.json and installs the prefer-fork-agents skill.
+# Sets CLAUDE_CODE_FORK_SUBAGENT=1 in ~/.claude/settings.json and installs all bundled skills.
 #
 # Requires PowerShell 7+. On Windows, install via:  winget install --id Microsoft.Powershell
 
@@ -73,14 +73,8 @@ $data = @{}
 if ((Test-Path $Settings) -and ((Get-Item $Settings).Length -gt 0)) {
     $raw = Get-Content -Path $Settings -Raw
 
-    # Best-effort duplicate-key detection at the top level.
-    # Matches keys at depth 1 in conventionally formatted JSON (one key per line,
-    # any indentation). Doesn't catch single-line minified JSON, but that's rare
-    # for hand-edited settings.json files.
+    # Best-effort duplicate top-level key detection via brace-depth tracking.
     $pattern = '(?m)^[ \t]+"([^"\\]+)"\s*:'
-    $allKeys = [regex]::Matches($raw, $pattern) | ForEach-Object { $_.Groups[1].Value }
-
-    # Filter to top-level only by tracking brace depth at each match position
     $topLevelKeys = @()
     foreach ($match in [regex]::Matches($raw, $pattern)) {
         $depth = 0
@@ -127,33 +121,57 @@ Add-Content -Path $Settings -Value "`n" -NoNewline
 
 Write-Host "Merged CLAUDE_CODE_FORK_SUBAGENT=1 into $Settings"
 
-# ---- Step 4: Install the skill ----
+# ---- Step 4: Install all bundled skills (auto-discovered) ----
 
-$SkillSource = Join-Path $ScriptDir 'skills' 'prefer-fork-agents'
-$SkillDest   = Join-Path $SkillsDir 'prefer-fork-agents'
-$SkillFile   = Join-Path $SkillSource 'SKILL.md'
+$SkillsBase = Join-Path $ScriptDir 'skills'
 
-if (-not (Test-Path $SkillFile)) {
-    Write-Error "skill source not found at $SkillFile`n(Are you running install.ps1 from the repo root?)"
+if (-not (Test-Path $SkillsBase)) {
+    Write-Error "skills directory not found at $SkillsBase`n(Are you running install.ps1 from the repo root?)"
     exit 1
 }
 
-New-Item -ItemType Directory -Path $SkillDest -Force | Out-Null
-Copy-Item -Path $SkillFile -Destination (Join-Path $SkillDest 'SKILL.md') -Force
-Write-Host "Installed skill to: $(Join-Path $SkillDest 'SKILL.md')"
+$InstalledCount = 0
+foreach ($skillDirInfo in Get-ChildItem -Path $SkillsBase -Directory) {
+    $skillName = $skillDirInfo.Name
+    $skillFile = Join-Path $skillDirInfo.FullName 'SKILL.md'
+    if (-not (Test-Path $skillFile)) {
+        Write-Host "  skip $skillName (no SKILL.md)"
+        continue
+    }
+    $skillDest = Join-Path $SkillsDir $skillName
+    New-Item -ItemType Directory -Path $skillDest -Force | Out-Null
+    Copy-Item -Path $skillFile -Destination (Join-Path $skillDest 'SKILL.md') -Force
+    Write-Host "Installed skill: $(Join-Path $skillDest 'SKILL.md')"
+    $InstalledCount++
+}
+
+if ($InstalledCount -eq 0) {
+    Write-Error "no skills found to install in $SkillsBase"
+    exit 1
+}
 
 # ---- Done ----
 
 Write-Host ''
-Write-Host 'Installation complete.'
+Write-Host "Installation complete. $InstalledCount skill(s) installed."
 Write-Host ''
 Write-Host 'Next steps:'
 Write-Host '  1. Restart Claude Code (close and reopen — settings load at process startup)'
-Write-Host "  2. In a fresh session, run /skills — 'prefer-fork-agents' should be listed"
+Write-Host '  2. In a fresh session, run /skills — installed skills should be listed'
 Write-Host '  3. Try /fork — the slash command should now be available'
 Write-Host "  4. Test: 'Spawn an agent that searches my repo for X'"
 Write-Host "     The agent indicator should show 'fork' instead of 'general-purpose'"
 Write-Host ''
+Write-Host 'Recommended next step for projects using parallel fork fan-outs:'
+Write-Host "  Add '.claude/worktrees/' to your project's .gitignore."
+Write-Host '  (Worktree forks create nested .git directories that should be excluded.)'
+Write-Host ''
 Write-Host 'To uninstall:'
 Write-Host "  Copy-Item '$Backup' '$Settings'"
-Write-Host "  Remove-Item -Recurse -Force '$SkillDest'"
+foreach ($skillDirInfo in Get-ChildItem -Path $SkillsBase -Directory) {
+    $skillName = $skillDirInfo.Name
+    $skillFile = Join-Path $skillDirInfo.FullName 'SKILL.md'
+    if (Test-Path $skillFile) {
+        Write-Host "  Remove-Item -Recurse -Force '$(Join-Path $SkillsDir $skillName)'"
+    }
+}

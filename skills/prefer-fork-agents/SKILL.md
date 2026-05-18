@@ -1,6 +1,6 @@
 ---
 name: prefer-fork-agents
-description: Defines the project's subagent delegation policy — prefer fork-mode dispatch (inherits full conversation context, shares prompt cache) over named subagents whenever a delegated task benefits from already-established context. CLAUDE_CODE_FORK_SUBAGENT=1 is active in this environment. Omitting subagent_type from the Agent/Task call is the trigger for fork mode. Default-deny mindset for named subagents — if you cannot articulate why a named subagent is required, dispatch a fork. Apply this skill EVERY time you are about to call the Agent/Task tool, EVERY time you reason about subagent_type, EVERY time the user requests delegated/parallel/background agent work, and BEFORE fanning out to multiple agents in parallel.
+description: Defines the project's subagent delegation policy — prefer fork-mode dispatch (inherits full conversation context, shares prompt cache) over named subagents whenever a delegated task benefits from already-established context. CLAUDE_CODE_FORK_SUBAGENT=1 is active in this environment. Omitting subagent_type from the Agent/Task call is the trigger for fork mode. Default-deny mindset for named subagents — if you cannot articulate why a named subagent is required, dispatch a fork. Apply this skill EVERY time you are about to call the Agent/Task tool, EVERY time you reason about subagent_type, EVERY time the user requests delegated/parallel/background agent work, and BEFORE fanning out to multiple agents in parallel. For multi-fork orchestration (worktrees, fan-out coordination, reporting contracts), defer to the fork-fan-out skill.
 when_to_use: User says "start an agent", "spawn a researcher", "delegate", "dispatch a subagent", "run a research", "investigate X", "analyze Y in parallel", "agent für", or any phrasing that implies subagent dispatch. Also: any time you are internally considering subagent_type values like general-purpose, researcher, or a custom agent name, or contemplating parallel work across multiple problems.
 ---
 
@@ -57,7 +57,7 @@ The fork-vs-named decision is downstream of a more fundamental question: should 
 - Workers would interfere (editing the same files, racing on shared resources)
 - Exploratory debugging where you do not yet know what is broken. Go serial until you have hypotheses.
 
-If the answer is "do not parallelize", dispatch a single agent (still fork by default per the rule below). If the answer is "parallelize", proceed to the fork-vs-named decision.
+If the answer is "do not parallelize", dispatch a single agent (still fork by default per the rule below). If the answer is "parallelize", proceed to the fork-vs-named decision below — AND consult the `fork-fan-out` skill for orchestration patterns (worktrees, reporting contracts, parent-merge sequence).
 
 ## Decision rule
 
@@ -77,12 +77,12 @@ If none of these four cases applies, dispatch a fork. If you cannot articulate w
 
 ## Constraints
 
-- **Concurrency cap:** approximately 10 simultaneous forks; the scheduler queues the rest sequentially, which kills the wall-clock advantage of fan-out.
-- **No recursion:** a fork cannot spawn further forks. Forks see an injected directive preventing it. Plan fan-outs as flat, not nested.
+- **Concurrency: 6-8 practical, ~10 scheduler-cap.** The scheduler accepts roughly 10 simultaneous forks, but the planning-vs-execution gap grows beyond 5-6. At 7+ parallel tracks, retroactive auditing tends to replace actual orchestration. Soft cap at 6; sequentialize larger batches into waves. See `fork-fan-out` skill for the empirical basis.
+- **No recursion:** a fork cannot spawn further forks. Forks see an injected directive preventing it. Plan fan-outs as flat, not nested. (For two-layer parallelism, see the Federation pattern in `fork-fan-out`.)
 - **Compaction inheritance:** if the parent has auto-compacted before the fork, the fork inherits the compacted (lossy) state — not the original. Dispatch forks early in long sessions, ideally before 60% context utilization.
 - **Incompatible with coordinator mode** and with `claude --print` (headless) mode.
-- **Cost scales with session length:** each fork carries the full parent history. In long sessions, ten parallel forks can be expensive even with cache discounts. Worth it for wall-clock speedup, but budget accordingly.
-- **Filesystem isolation for edit fan-outs:** when fanning out forks that will edit files, dispatch each with `isolation: "worktree"`. Without it, parallel forks share the same working directory and risk overwriting each other's edits or producing silent merge conflicts. Read-only fan-outs (search, analysis, reporting) do not need worktree isolation.
+- **Cost scales with session length:** each fork carries the full parent history. In long sessions, parallel forks can be expensive even with cache discounts. Worth it for wall-clock speedup, but budget accordingly.
+- **Filesystem isolation for edit fan-outs:** when fanning out forks that will edit files, dispatch each with `isolation: "worktree"`. Without it, parallel forks share the same working directory and risk overwriting each other's edits or producing silent merge conflicts. Read-only fan-outs (search, analysis, reporting) do not need worktree isolation. Project `.gitignore` should exclude `.claude/worktrees/` — see `fork-fan-out` skill.
 
 ## Post-dispatch verification
 
@@ -96,7 +96,7 @@ After a fan-out returns, run this ritual before considering the work done. Non-o
 
 4. **Spot-check for systematic errors.** Forks share the parent's biases and assumptions. If one fork made a wrong inference (e.g., misread an API contract), the others likely did too. Sample one or two outputs deeply rather than trusting all uniformly.
 
-For single-fork dispatches, steps 1 and 3 still apply. Step 2 is moot, step 4 less critical.
+For single-fork dispatches, steps 1 and 3 still apply. Step 2 is moot, step 4 less critical. For multi-fork fan-outs, the `fork-fan-out` skill expands this ritual with registry tracking and merge-stage discipline.
 
 ## Worked example
 
@@ -121,7 +121,7 @@ The fork-prompt is shorter precisely because the fork already inherits "the alte
 
 Right before you emit an Agent/Task tool call, ask the three questions in order:
 
-1. **Is this a parallelizable batch?** Apply the "When to parallelize at all" criteria. If no, single dispatch. If yes, plan the fan-out before issuing calls.
+1. **Is this a parallelizable batch?** Apply the "When to parallelize at all" criteria. If no, single dispatch. If yes, plan the fan-out before issuing calls — consult `fork-fan-out` for orchestration.
 
 2. **Per worker, does the task benefit from current conversation context?**
    - Yes → fork (omit `subagent_type`)

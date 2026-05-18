@@ -10,5 +10,5 @@
 .idea/
 .vscode/
 
-# Backups produced by install.sh
+# Backups produced by install scripts
 *.pre-fork-backup-*
