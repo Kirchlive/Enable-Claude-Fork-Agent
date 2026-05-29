@@ -1,0 +1,104 @@
+name: Bug report
+description: Report a defect in the installer or bundled skills
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please complete every field — issues missing the environment block will be closed.
+
+  - type: input
+    id: claude-version
+    attributes:
+      label: Claude Code version
+      description: Output of `claude --version`
+      placeholder: "2.1.143"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux (Ubuntu / Debian)
+        - Linux (Fedora / RHEL)
+        - Linux (Arch)
+        - Linux (other)
+        - Windows 10
+        - Windows 11
+        - WSL2
+        - Git Bash on Windows
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installer
+    attributes:
+      label: Which installer did you run?
+      options:
+        - install.sh
+        - install.ps1
+        - Manual (followed README)
+        - Not the installer (skill-level bug)
+    validations:
+      required: true
+
+  - type: input
+    id: install-path
+    attributes:
+      label: Install path
+      description: "Output of: `realpath ~/.claude` (bash) or `(Get-Item $HOME/.claude).FullName` (pwsh)"
+      placeholder: "/Users/you/.claude"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong? Include the exact error message if any.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimal sequence of commands that triggers the bug.
+      render: bash
+      placeholder: |
+        1. git clone https://github.com/Kirchlive/Enable-Claude-Fork-Agent.git
+        2. cd Enable-Claude-Fork-Agent
+        3. bash install.sh
+        4. observe: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: check-output
+    attributes:
+      label: Output of `--check`
+      description: "Paste output of: `bash install.sh --check` or `./install.ps1 -Check`"
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have read the README's Caveats section
+          required: true
+        - label: I have searched existing issues
+          required: true

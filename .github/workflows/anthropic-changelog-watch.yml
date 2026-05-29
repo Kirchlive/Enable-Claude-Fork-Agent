@@ -1,0 +1,127 @@
+name: Anthropic changelog drift watch
+
+# Watches https://code.claude.com/docs/en/changelog for changes that mention
+# fork / subagent / CLAUDE_CODE_FORK_SUBAGENT, and opens an issue when the
+# affected lines drift. Prevents this repo's docs from silently going stale
+# against upstream Anthropic releases.
+#
+# Triggers:
+#   - Weekly cron (Mondays 12:00 UTC)
+#   - Manual via workflow_dispatch
+#
+# Storage:
+#   - Snapshot of the changelog page is committed under .github/cache/changelog.html
+#   - First run seeds the snapshot without opening an issue
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch current changelog
+        run: |
+          mkdir -p .github/cache
+          curl -fsSL --retry 3 --retry-delay 10 \
+            https://code.claude.com/docs/en/changelog \
+            -o .github/cache/changelog.new.html
+
+      - name: Diff against previous snapshot
+        id: diff
+        run: |
+          set -u
+          PREV=.github/cache/changelog.html
+          NEW=.github/cache/changelog.new.html
+
+          if [ ! -f "$PREV" ]; then
+            echo "seed=true" >> "$GITHUB_OUTPUT"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Capture diff without failing the step when files differ
+          DIFF=$(diff -u "$PREV" "$NEW" || true)
+          if [ -z "$DIFF" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Filter to changed lines (added or removed, not headers) that mention
+          # the watched keywords. Case-insensitive.
+          RELEVANT=$(printf '%s\n' "$DIFF" \
+            | grep -E '^[+-]' \
+            | grep -vE '^(---|\+\+\+)' \
+            | grep -iE 'fork|subagent|CLAUDE_CODE_FORK_SUBAGENT' \
+            || true)
+
+          if [ -z "$RELEVANT" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          {
+            echo 'diff<<DIFF_EOF'
+            printf '%s\n' "$RELEVANT"
+            echo 'DIFF_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Ensure label exists
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create anthropic-drift \
+            --color FBCA04 \
+            --description "Anthropic docs changed in a way that affects this repo" \
+            2>/dev/null || true
+
+      - name: Open drift issue
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIFF_BODY: ${{ steps.diff.outputs.diff }}
+        run: |
+          {
+            echo "Anthropic Claude Code changelog has changed in lines that mention **fork**, **subagent**, or **CLAUDE_CODE_FORK_SUBAGENT**."
+            echo
+            echo "Source: <https://code.claude.com/docs/en/changelog>"
+            echo
+            echo '```diff'
+            printf '%s\n' "$DIFF_BODY"
+            echo '```'
+            echo
+            echo "Review this repo's README Caveats, the skills, and \`docs/MASTERPLAN.md\` for any claims that need updating."
+          } > /tmp/issue-body.md
+
+          gh issue create \
+            --title "anthropic-drift: changelog mentions fork/subagent changed" \
+            --label anthropic-drift \
+            --body-file /tmp/issue-body.md
+
+      - name: Commit updated snapshot
+        if: steps.diff.outputs.seed == 'true' || steps.diff.outputs.changed == 'true'
+        run: |
+          cp .github/cache/changelog.new.html .github/cache/changelog.html
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/cache/changelog.html
+          if git diff --staged --quiet; then
+            echo "No snapshot change to commit."
+          else
+            git commit -m "chore(watch): update Anthropic changelog snapshot"
+            git push
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: rm -f .github/cache/changelog.new.html

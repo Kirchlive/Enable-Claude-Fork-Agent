@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new behavior, flag, or skill
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening: see CONTRIBUTING.md "Scope" section. This repo is intentionally small. Requests that expand scope will be discussed but are unlikely to be merged.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What real situation is currently friction-y or impossible?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Concrete change. Reference files, flags, or skills.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried. Other repos that solve this differently. Reasons not to do it.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where does this belong?
+      options:
+        - install.sh / install.ps1 (new flag or behavior)
+        - skills/ (new or expanded skill)
+        - README.md (documentation only)
+        - .github/ (CI, templates)
+        - New top-level area (please justify)
+    validations:
+      required: true
+
+  - type: textarea
+    id: anthropic-docs
+    attributes:
+      label: Anthropic documentation reference
+      description: If this request touches a Claude Code feature, link the relevant docs page or `anthropics/claude-code` issue. Tribal knowledge is fine to mention in addition, but the docs reference is required.
+      placeholder: "https://code.claude.com/docs/en/sub-agents — section on …"
+    validations:
+      required: false

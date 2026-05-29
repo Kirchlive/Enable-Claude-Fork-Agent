@@ -1,0 +1,24 @@
+{
+  "name": "Claude-Full-Context-Agent",
+  "id": "Claude-Full-Context-Agent",
+  "owner": {
+    "name": "Kirchlive"
+  },
+  "metadata": {
+    "description": "This Plugin switches Claude Code's default subagent process, from shortcoming context behavior, to fork-agents-mode with full session context, including Claude Skills for correct use of forks and worktrees.",
+    "version": "1.0.2"
+  },
+  "plugins": [
+    {
+      "name": "Claude-Full-Context-Agent",
+      "source": "./",
+      "description": "This Plugin switches Claude Code's default subagent process, from shortcoming context behavior, to fork-agents-mode with full session context, including Claude Skills for correct use of forks and worktrees.",
+      "version": "1.0.2",
+      "author": {
+        "name": "Kirchlive"
+      },
+      "keywords": ["agent", "fork", "skill", "claude", "anthropic", "agent-orchestration", "claude-code", "subagents", "context-engineering", "claude-skills", "fork-agent"],
+      "category": "workflow"
+    }
+  ]
+}

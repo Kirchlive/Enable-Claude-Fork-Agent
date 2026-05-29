@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Backups produced by install scripts
+*.pre-fork-backup-*
+
+# Worktree-isolated subagent checkouts (Anthropic-documented default location)
+.claude/worktrees/

@@ -1,0 +1,20 @@
+{
+  "_about": "Example PreToolUse hook for fork-policy visibility. Logs every Task tool call to ~/.claude/fork-policy.log so you can audit how often named subagent_type is used vs. omitted (fork mode). Does NOT block by default — visibility only.",
+  "_install": "Merge into ~/.claude/settings.json under the 'hooks' key (or create the key). Restart Claude Code.",
+  "_upgrade_to_block": "Replace the inner 'command' string with:  jq -e '.tool_input.subagent_type' >/dev/null 2>&1 && { echo 'fork policy: named subagent_type forbidden in this project' >&2; exit 2; } || exit 0",
+  "_block_note": "Exit code 2 instructs Claude Code to block the tool use (per the hooks contract). Exit 0 lets it proceed.",
+  "_docs": "https://code.claude.com/docs/en/hooks",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tee -a \"$HOME/.claude/fork-policy.log\" >/dev/null; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}
