@@ -19,30 +19,6 @@ Restart Claude Code.
 
 ---
 
-### Manual (without the marketplace)
-
-If you cloned the repo directly instead of installing via the marketplace:
-
-```
-git clone https://github.com/Kirchlive/Claude-Full-Context-Agent.git
-cd Claude-Full-Context-Agent
-
-# macOS / Linux / WSL / Git Bash
-bash install.sh
-
-# Windows (PowerShell 7+)
-.\install.ps1
-```
-
-This both sets the env var and copies the skills into `~/.claude/skills/` (so they load without the plugin). Restart Claude Code.
-
-PowerShell users: if you hit an execution-policy error, run once `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` and re-run. Install PowerShell 7+ via `winget install --id Microsoft.Powershell` (Windows) or `brew install --cask powershell` (macOS).
-
-
-Both back up your `settings.json`, merge `CLAUDE_CODE_FORK_SUBAGENT=1`, and run the verification checks. **Restart Claude Code** afterward — the variable is read only at startup.
-
----
-
 ## What this plugin does
 
 1. **Ships two skills**, auto-loaded the moment the plugin is enabled — no copying required:
@@ -139,6 +115,30 @@ The patterns this plugin encodes are derived from the author's own production us
 | Largest delivered release | 16 new operations, 90 tests, 2,116 insertions in a ~45-minute session sequence |
 
 Behaviors that emerged from this usage — the 6-8 practical concurrency cap, the parent-prepares→fan-out→parent-merges sequence, the embedded-repo gitignore lesson, the federation pattern — are codified in the `fan-out-fork-agents` skill rather than left as tribal knowledge.
+
+---
+
+### Manual (without the marketplace)
+
+If you cloned the repo directly instead of installing via the marketplace:
+
+```
+git clone https://github.com/Kirchlive/Claude-Full-Context-Agent.git
+cd Claude-Full-Context-Agent
+
+# macOS / Linux / WSL / Git Bash
+bash install.sh
+
+# Windows (PowerShell 7+)
+.\install.ps1
+```
+
+This both sets the env var and copies the skills into `~/.claude/skills/` (so they load without the plugin). Restart Claude Code.
+
+PowerShell users: if you hit an execution-policy error, run once `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` and re-run. Install PowerShell 7+ via `winget install --id Microsoft.Powershell` (Windows) or `brew install --cask powershell` (macOS).
+
+
+Both back up your `settings.json`, merge `CLAUDE_CODE_FORK_SUBAGENT=1`, and run the verification checks. **Restart Claude Code** afterward — the variable is read only at startup.
 
 ---
 
