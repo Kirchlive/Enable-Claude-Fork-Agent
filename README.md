@@ -1,6 +1,6 @@
 # <u>Claude-[Full-Context](https://github.com/Kirchlive/Claude-Full-Context-Agent)-Agent</u>
 
-This Plugin switches Claude Code's default subagent process, from shortcoming context behavior, to fork-agents-mode with full session context, including Claude Skills for correct use of forks and worktrees.
+This Plugin switches Claude Code's default subagent process, from flawed behavior do to lack of context, to fork-agents-mode with full session context, including Claude Skills for correct use of forks and worktrees.
 
 <img src="https://i.imgur.com/tnjhkDJ.png" alt="IMG" width="750">
 
